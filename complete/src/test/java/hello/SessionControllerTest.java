@@ -26,6 +26,10 @@ package hello;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.boot.context.embedded.LocalServerPort;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -33,6 +37,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.OkHttpClientHttpRequestFactory;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.RestTemplate;
 import redis.clients.jedis.Jedis;
 
@@ -44,13 +49,18 @@ import static org.junit.Assert.assertTrue;
 /**
  * Created by wbeckwith.
  */
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 public class SessionControllerTest {
+    
+    @LocalServerPort
+    private int port;
 
     private Jedis jedis;
     private TestRestTemplate testRestTemplate;
     private TestRestTemplate testRestTemplateWithAuth;
-    private String testUrl = "http://localhost:8080/";
-    private String postUrl = "http://localhost:8080/hello2";
+    private String testUrl;
+    private String postUrl;
 
     @Before
     public void clearRedisData() {
@@ -60,6 +70,8 @@ public class SessionControllerTest {
         
         jedis = new Jedis("localhost", 6379);
         jedis.flushAll();
+        testUrl = "http://localhost:" + port + "/";
+        postUrl = "http://localhost:" + port + "/hello2";
     }
     
     @Test
