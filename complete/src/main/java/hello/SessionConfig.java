@@ -24,39 +24,15 @@
 
 package hello;
 
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
-import redis.clients.jedis.Jedis;
-
-import java.util.Date;
-import java.util.Set;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
+import org.springframework.session.web.context.AbstractHttpSessionApplicationInitializer;
 
 /**
  * Created by wbeckwith.
  */
-@RestController
-public class HelloController {
-    
-    private SimpMessagingTemplate messagingTemplate;
-    private Jedis jedis;
-    
-    public HelloController(SimpMessagingTemplate messagingTemplate, Jedis jedis) {
-        this.messagingTemplate = messagingTemplate;
-        this.jedis = jedis;
-    }
-    
-    @PostMapping(value = "/hello2")
-    public String hello2(@RequestBody HelloMessage message) throws Exception {
-        Set<String> result = jedis.keys("*");
-        for (String key: result) {
-            System.out.println("Key: " + key);
-        }
-        System.out.println(message.getName() + " received.");
-        Greeting g = new Greeting(message.getName());
-        messagingTemplate.convertAndSend("/topic/greetings", g);
-        return new Date().toString();
-    }
-}
+@Configuration
+@EnableRedisHttpSession
+public class SessionConfig extends AbstractHttpSessionApplicationInitializer {
 
+}
