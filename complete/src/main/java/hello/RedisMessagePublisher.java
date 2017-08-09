@@ -25,33 +25,22 @@
 package hello;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.listener.ChannelTopic;
+import org.springframework.stereotype.Service;
 
 /**
  * Created by wbeckwith.
  */
-@Configuration
-@EnableWebSecurity
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
-    
+@Service
+public class RedisMessagePublisher implements HelloMessagePublisher {
     @Autowired
-    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-        auth
-            .inMemoryAuthentication()
-            .withUser("admin").password("password").roles("ADMIN").and()
-            .withUser("foo").password("bar").roles("USER");
-    }
+    private RedisTemplate<String, HelloMessage> template;
     
     @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http
-            .httpBasic().and().csrf().disable()
-            .authorizeRequests()
-            .antMatchers("/**").hasRole("ADMIN")
-            .anyRequest().authenticated();
+    public void publish(HelloMessage message) {
+        String routingKey = WebSocketSubscribeListener.getRoutingKey("admin");
+        ChannelTopic topic = new ChannelTopic(routingKey);
+        template.convertAndSend(topic.getTopic(), message);
     }
 }

@@ -21,6 +21,9 @@ function connect() {
         stompClient.subscribe('/topic/greetings', function (greeting) {
             showGreeting(JSON.parse(greeting.body).content);
         });
+        stompClient.subscribe('/user/admin/queue/test_generations', function (data) {
+            console.log('Test Generation: ' + data);;
+        });
     });
 }
 

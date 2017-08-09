@@ -24,6 +24,8 @@
 
 package hello;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -38,6 +40,9 @@ import java.util.Set;
  */
 @RestController
 public class HelloController {
+    
+    @Autowired
+    private RedisMessagePublisher messagePublisher;
     
     private SimpMessagingTemplate messagingTemplate;
     private Jedis jedis;
@@ -56,6 +61,14 @@ public class HelloController {
         System.out.println(message.getName() + " received.");
         Greeting g = new Greeting(message.getName());
         messagingTemplate.convertAndSend("/topic/greetings", g);
+        return new Date().toString();
+    }
+    
+    @PostMapping(value = "/helloRedis")
+    public String helloRedis(@RequestBody HelloMessage message) throws Exception {
+        
+        System.out.println(message.getName() + " received.");
+        messagePublisher.publish(message);
         return new Date().toString();
     }
 }
