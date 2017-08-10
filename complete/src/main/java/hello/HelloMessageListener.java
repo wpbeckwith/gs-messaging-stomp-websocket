@@ -26,18 +26,21 @@ package hello;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.user.UserDestinationResolver;
 import org.springframework.stereotype.Component;
 
 /**
  * Created by wbeckwith.
  */
 public class HelloMessageListener {
+    public static final String USER_QUEUE_TEST_GENERATIONS = "/queue/test_generations";
+
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
-    
+
     public void handleMessage(HelloMessage message) {
         System.out.println("Handling the message for " + message.getName());
         Greeting g = new Greeting(message.getName());
-        messagingTemplate.convertAndSend("/topic/greetings", g);
+        messagingTemplate.convertAndSendToUser("admin", USER_QUEUE_TEST_GENERATIONS, g);
     }
 }

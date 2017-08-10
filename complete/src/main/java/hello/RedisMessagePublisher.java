@@ -27,7 +27,12 @@ package hello;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
+import org.springframework.messaging.simp.user.SimpSession;
+import org.springframework.messaging.simp.user.SimpUser;
+import org.springframework.messaging.simp.user.SimpUserRegistry;
 import org.springframework.stereotype.Service;
+
+import java.util.Set;
 
 /**
  * Created by wbeckwith.
@@ -36,9 +41,14 @@ import org.springframework.stereotype.Service;
 public class RedisMessagePublisher implements HelloMessagePublisher {
     @Autowired
     private RedisTemplate<String, HelloMessage> template;
+
+    @Autowired
+    SimpUserRegistry userRegistry;
     
     @Override
     public void publish(HelloMessage message) {
+        SimpUser user = userRegistry.getUser("admin");
+        Set<SimpSession> sessions = user.getSessions();
         String routingKey = WebSocketSubscribeListener.getRoutingKey("admin");
         ChannelTopic topic = new ChannelTopic(routingKey);
         template.convertAndSend(topic.getTopic(), message);

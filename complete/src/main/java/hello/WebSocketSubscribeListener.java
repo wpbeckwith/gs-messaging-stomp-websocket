@@ -31,8 +31,11 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
+import org.springframework.messaging.simp.user.UserDestinationResolver;
+import org.springframework.messaging.simp.user.UserDestinationResult;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
@@ -56,10 +59,15 @@ public class WebSocketSubscribeListener implements ApplicationListener<SessionSu
     
     @Autowired
     MessageListenerAdapter messageListenerAdapter;
+
+    @Autowired
+    UserDestinationResolver destinationResolver;
     
     @Override
     public void onApplicationEvent(SessionSubscribeEvent event) {
-        StompHeaderAccessor sha = StompHeaderAccessor.wrap(event.getMessage());
+        Message<byte[]> message = event.getMessage();
+        UserDestinationResult destinationResult = destinationResolver.resolveDestination(message);
+        StompHeaderAccessor sha = StompHeaderAccessor.wrap(message);
         MessageHeaders messageHeaders = sha.getMessageHeaders();
         for (String key : messageHeaders.keySet()) {
             Object value = messageHeaders.get(key);
@@ -67,18 +75,20 @@ public class WebSocketSubscribeListener implements ApplicationListener<SessionSu
         }
     
         AbstractAuthenticationToken token = (AbstractAuthenticationToken) sha.getMessageHeaders().get("simpUser");
-        if (token != null) {
+        String eventDestination = sha.getDestination();
+        if (token != null && destinationResult != null && eventDestination != null && eventDestination.startsWith("/user/")) {
             User user = (User) token.getPrincipal();
-            String userDestination = WebSocketConfig.getUserTestGenerationsQueue(user);
-            String eventDestination = sha.getDestination();
-            
-            if (eventDestination.equals(userDestination)) {
-                String routingKey = getRoutingKey(user.getUsername());
-                ChannelTopic channelTopic = new ChannelTopic(routingKey);
+//            String userDestination = WebSocketConfig.getUserTestGenerationsQueue(user);
+            String userDestination = (String) destinationResult.getTargetDestinations().toArray()[0];
+
+//            if (eventDestination.equals(userDestination)) {
+//                String routingKey = getRoutingKey(user.getUsername());
+//                ChannelTopic channelTopic = new ChannelTopic(routingKey);
+                ChannelTopic channelTopic = new ChannelTopic(userDestination);
                 redisMessageListenerContainer.addMessageListener(messageListenerAdapter, channelTopic);
                 log.info("Websocket subscribe event; sessionId={}; username={}; routingKey={}", sha.getSessionId(),
-                    user.getUsername(), routingKey);
-            }
+                    user.getUsername(), userDestination);
+//            }
         }
     }
     

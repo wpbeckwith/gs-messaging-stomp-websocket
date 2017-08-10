@@ -60,7 +60,8 @@ public class HelloController {
         }
         System.out.println(message.getName() + " received.");
         Greeting g = new Greeting(message.getName());
-        messagingTemplate.convertAndSend("/topic/greetings", g);
+        String from = message.getFrom();
+        messagingTemplate.convertAndSendToUser(from,"/queue/test_generations", g);
         return new Date().toString();
     }
     
